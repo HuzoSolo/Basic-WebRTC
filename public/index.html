@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Sinyalleşme Test</title>
+    <!-- Font Awesome İkonları -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .video-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        video {
+            width: 320px;
+            height: 240px;
+            background-color: black;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        input,
+        select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        #logContainer {
+            margin-top: 20px;
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+
+        /* Medya Kontrolleri Stilleri */
+        .media-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .media-controls button {
+            padding: 8px 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .media-controls button:hover {
+            background-color: #45a049;
+        }
+
+        .media-controls button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* Font Awesome ikonları için stil */
+        .fas {
+            margin-right: 5px;
+        }
+
+        /* Chat Stilleri */
+        .chat-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .chat-container h3 {
+            margin: 0;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .chat-messages {
+            height: 250px;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #fff;
+        }
+
+        .chat-input-area {
+            display: flex;
+            border-top: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 18px;
+            display: inline-block;
+            max-width: 80%;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .chat-message.own {
+            background-color: #dcf8c6;
+            margin-left: auto;
+            text-align: right;
+            float: right;
+            clear: both;
+        }
+
+        .chat-message.other {
+            background-color: #f1f1f1;
+            margin-right: auto;
+            float: left;
+            clear: both;
+        }
+
+        .message-sender {
+            font-weight: bold;
+            font-size: 0.8em;
+            margin-bottom: 3px;
+        }
+
+        .message-time {
+            font-size: 0.7em;
+            color: #777;
+            margin-top: 2px;
+            text-align: right;
+        }
+
+        .message-content {
+            line-height: 1.4;
+        }
+
+        /* Temizleme */
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+        /* Kullanıcı Giriş Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 350px;
+            max-width: 90%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .color-picker {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border: 3px solid #333;
+        }
+
+        .btn-primary {
+            background-color: #4CAF50;
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Avatar Stili */
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            margin-right: 10px;
+        }
+
+        .participant {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .participant.active {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Kullanıcı Giriş Modalı -->
+    <div id="userLoginModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-title">Görüşmeye Katılın</div>
+            <form id="userForm">
+                <div class="form-group">
+                    <label for="userName">Adınız:</label>
+                    <input type="text" id="userName" class="form-control" placeholder="Adınızı girin" required>
+                </div>
+                <div class="form-group">
+                    <label>Profil Rengi:</label>
+                    <div class="color-picker">
+                        <div class="color-option selected" style="background-color: #4CAF50;" data-color="#4CAF50">
+                        </div>
+                        <div class="color-option" style="background-color: #2196F3;" data-color="#2196F3"></div>
+                        <div class="color-option" style="background-color: #f44336;" data-color="#f44336"></div>
+                        <div class="color-option" style="background-color: #9c27b0;" data-color="#9c27b0"></div>
+                        <div class="color-option" style="background-color: #ff9800;" data-color="#ff9800"></div>
+                        <div class="color-option" style="background-color: #795548;" data-color="#795548"></div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">Görüşmeye Başla</button>
+            </form>
+        </div>
+    </div>
+
+    <h1>WebRTC Sinyalleşme Test Uygulaması</h1>
+    <div class="container">
+        <div class="row">
+            <input type="text" id="roomId" placeholder="Oda ID'si girin">
+            <button id="createRoom">Oda Oluştur</button>
+            <button id="joinRoom">Odaya Katıl</button>
+            <button id="leaveRoom" disabled>Odadan Ayrıl</button>
+        </div>
+
+        <div class="video-container">
+            <div>
+                <h3>Yerel Video</h3>
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="media-controls">
+                    <button id="toggleMicBtn"><i class="fas fa-microphone"></i></button>
+                    <button id="toggleCamBtn"><i class="fas fa-video"></i></button>
+                    <button id="shareScreenBtn"><i class="fas fa-desktop"></i> Ekranı Paylaş</button>
+                    <button id="fullscreenBtn"><i class="fas fa-expand"></i></button>
+                </div>
+            </div>
+            <div id="remoteVideosContainer">
+                <!-- Remote videos will be dynamically added here -->
+            </div>
+        </div>
+
+        <!-- Chat Bölümü -->
+        <div class="chat-container">
+            <h3>Sohbet</h3>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="Mesajınızı yazın...">
+                <button id="sendMessageBtn">Gönder</button>
+            </div>
+        </div>
+
+        <div>
+            <h3>Log</h3>
+            <div id="logContainer"></div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // HTTPS kontrolünü kaldırıyoruz
+        // if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+        //     window.location.href = 'https://' + window.location.host + window.location.pathname;
+        // }
+
+        const socket = io();
+        let localStream;
+        let peerConnections = new Map(); // Map of socketId -> RTCPeerConnection
+        let roomId;
+        let isInitiator = false;
+
+        // HTML Elementleri
+        const roomIdInput = document.getElementById('roomId');
+        const createRoomBtn = document.getElementById('createRoom');
+        const joinRoomBtn = document.getElementById('joinRoom');
+        const leaveRoomBtn = document.getElementById('leaveRoom');
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideosContainer = document.getElementById('remoteVideosContainer');
+        const logContainer = document.getElementById('logContainer');
+
+        // Medya kontrolleri için HTML elementleri
+        const toggleMicBtn = document.getElementById('toggleMicBtn');
+        const toggleCamBtn = document.getElementById('toggleCamBtn');
+        const shareScreenBtn = document.getElementById('shareScreenBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+        // Chat için HTML elementleri
+        const chatInput = document.getElementById('chatInput');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const chatMessages = document.getElementById('chatMessages');
+
+        // Medya kontrolleri için değişkenler
+        let isAudioEnabled = true;
+        let isVideoEnabled = true;
+        let screenStream = null;
+        let isScreenSharing = false;
+
+        // Basit kullanıcı bilgisi
+        const userData = {
+            id: 'user_' + Math.random().toString(36).substr(2, 9),
+            name: 'Kullanıcı_' + Math.floor(Math.random() * 1000)
+        };
+
+        // WebRTC Yapılandırması
+        const peerConfig = {
+            iceServers: [
+                // Google STUN Sunucuları
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' },
+                // Cloudflare STUN
+                { urls: 'stun:stun.cloudflare.com:3478' },
+                // Ücretsiz TURN Sunucuları
+                {
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
+            ],
+            iceCandidatePoolSize: 10 //10 olması şu anlama geliyor: 10 adet ice candidate oluşturulacak.
+        };
+
+        // Medya Kısıtlamaları
+        const mediaConstraints = {
+            video: {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                frameRate: { max: 15 }
+            },
+            audio: true
+        };
+
+        // Log fonksiyonu
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.classList.add('log-entry');
+            if (type === 'error') entry.classList.add('error');
+            if (type === 'success') entry.classList.add('success');
+
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+
+            console.log(`[${type}] ${message}`);
+        }
+
+        // Yerel Medya Akışını Başlat
+        async function startLocalStream() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+                localVideo.srcObject = localStream;
+                log('Yerel video akışı başlatıldı', 'success');
+                return true;
+            } catch (error) {
+                log(`Medya akışı başlatılamadı: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Peer Connection Oluştur
+        function createPeerConnection(targetId) {
+            try {
+                const peerConnection = new RTCPeerConnection(peerConfig);
+                log(`PeerConnection oluşturuldu (hedef: ${targetId})`);
+
+                // Bağlantı olayları
+                peerConnection.onicecandidate = (event) => handleIceCandidate(event, targetId);
+                peerConnection.ontrack = (event) => handleRemoteStreamAdded(event, targetId);
+                peerConnection.oniceconnectionstatechange = () => handleIceConnectionStateChange(targetId);
+
+                // Ek hata ayıklama olayları
+                peerConnection.onicegatheringstatechange = () => {
+                    console.log(`ICE Toplama Durumu (${targetId}):`, peerConnection.iceGatheringState);
+                    log(`ICE Toplama Durumu (${targetId}): ${peerConnection.iceGatheringState}`);
+                };
+
+                peerConnection.onsignalingstatechange = () => {
+                    console.log(`Sinyalleşme Durumu (${targetId}):`, peerConnection.signalingState);
+                    log(`Sinyalleşme Durumu (${targetId}): ${peerConnection.signalingState}`);
+                };
+
+                peerConnection.onconnectionstatechange = () => {
+                    console.log(`Bağlantı Durumu (${targetId}):`, peerConnection.connectionState);
+                    log(`Bağlantı Durumu (${targetId}): ${peerConnection.connectionState}`);
+
+                    // Bağlantı kapatıldıysa temizle
+                    if (peerConnection.connectionState === 'closed' ||
+                        peerConnection.connectionState === 'failed' ||
+                        peerConnection.connectionState === 'disconnected') {
+                        removePeerConnection(targetId);
+                    }
+                };
+
+                // Yerel akışı ekle
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+
+                // Peer bağlantısını sakla
+                peerConnections.set(targetId, peerConnection);
+
+                return peerConnection;
+            } catch (error) {
+                log(`PeerConnection oluşturulamadı (${targetId}): ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        // Peer bağlantısını kaldır
+        function removePeerConnection(targetId) {
+            const peerConnection = peerConnections.get(targetId);
+            if (peerConnection) {
+                try {
+                    peerConnection.onicecandidate = null;
+                    peerConnection.ontrack = null;
+                    peerConnection.oniceconnectionstatechange = null;
+                    peerConnection.close();
+
+                    // Video elementini kaldır
+                    removeRemoteVideo(targetId);
+
+                    // Map'ten kaldır
+                    peerConnections.delete(targetId);
+                    log(`Peer bağlantısı kaldırıldı: ${targetId}`);
+                } catch (error) {
+                    log(`Peer bağlantısını kaldırırken hata: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // ICE Adayı Olayı
+        function handleIceCandidate(event, targetId) {
+            if (event.candidate) {
+                console.log(`ICE adayı oluşturuldu (${targetId}):`, event.candidate);
+                log(`ICE aday gönderiliyor (${event.candidate.protocol || 'bilinmeyen'}) -> ${targetId}`);
+                socket.emit('ice-candidate', {
+                    targetId: targetId,
+                    candidate: event.candidate
+                });
+            } else {
+                console.log(`ICE aday toplama işlemi tamamlandı (${targetId})`);
+                log(`ICE aday toplama işlemi tamamlandı (${targetId})`);
+            }
+        }
+
+        // Uzak Akış Eklendi Olayı
+        function handleRemoteStreamAdded(event, targetId) {
+            log(`Uzak stream alındı (${targetId})`, 'success');
+
+            // Uzak video elementini oluştur veya güncelle
+            createOrUpdateRemoteVideo(targetId, event.streams[0]);
+        }
+
+        // Uzak video elementi oluştur veya güncelle
+        function createOrUpdateRemoteVideo(targetId, stream) {
+            const container = document.getElementById('remoteVideosContainer');
+            let videoEl = document.getElementById(`remote-video-${targetId}`);
+
+            // Video elementi yoksa oluştur
+            if (!videoEl) {
+                const videoContainer = document.createElement('div');
+                videoContainer.className = 'remote-video-wrapper';
+                videoContainer.id = `remote-container-${targetId}`;
+
+                // Kullanıcı adını gösteren başlık
+                const nameEl = document.createElement('h3');
+                nameEl.id = `remote-name-${targetId}`;
+                nameEl.textContent = `Uzak Video (${targetId.substring(0, 5)}...)`;
+
+                // Video elementi
+                videoEl = document.createElement('video');
+                videoEl.id = `remote-video-${targetId}`;
+                videoEl.autoplay = true;
+                videoEl.playsinline = true;
+
+                // Kontrol butonu
+                const fullscreenBtn = document.createElement('button');
+                fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';
+                fullscreenBtn.onclick = () => toggleFullscreen(videoEl);
+
+                const controls = document.createElement('div');
+                controls.className = 'media-controls';
+                controls.appendChild(fullscreenBtn);
+
+                // Tümünü ekle
+                videoContainer.appendChild(nameEl);
+                videoContainer.appendChild(videoEl);
+                videoContainer.appendChild(controls);
+                container.appendChild(videoContainer);
+
+                log(`Uzak video elementi oluşturuldu: ${targetId}`);
+            }
+
+            // Kullanıcı adını güncelle
+            const peerUserData = getUserDataFromPeerId(targetId);
+            if (peerUserData && peerUserData.name) {
+                const nameEl = document.getElementById(`remote-name-${targetId}`);
+                if (nameEl) {
+                    nameEl.textContent = peerUserData.name || `Uzak Video (${targetId.substring(0, 5)}...)`;
+                }
+            }
+
+            // Stream'i güncelle
+            videoEl.srcObject = stream;
+        }
+
+        // Uzak video elementini kaldır
+        function removeRemoteVideo(targetId) {
+            const container = document.getElementById(`remote-container-${targetId}`);
+            if (container) {
+                container.remove();
+                log(`Uzak video elementi kaldırıldı: ${targetId}`);
+            }
+        }
+
+        // Kullanıcı bilgisini ID'den al
+        function getUserDataFromPeerId(peerId) {
+            // Bu fonksiyonu uygun şekilde implemente edin
+            // Örneğin, aktif bağlantılar için bir kullanıcı listesi tutabilirsiniz
+            return null; // Şimdilik null dönüyoruz
+        }
+
+        // ICE Bağlantı Durumu Değişikliği
+        function handleIceConnectionStateChange(targetId) {
+            const peerConnection = peerConnections.get(targetId);
+            if (!peerConnection) return;
+
+            console.log(`ICE Bağlantı Durumu (${targetId}):`, peerConnection.iceConnectionState);
+            log(`ICE Bağlantı Durumu (${targetId}): ${peerConnection.iceConnectionState}`);
+
+            switch (peerConnection.iceConnectionState) {
+                case 'checking':
+                    log(`ICE bağlantıları kontrol ediliyor (${targetId})...`, 'info');
+                    break;
+                case 'connected':
+                    log(`ICE bağlantısı başarılı (${targetId})!`, 'success');
+                    break;
+                case 'completed':
+                    log(`ICE bağlantısı tamamlandı (${targetId})`, 'success');
+                    break;
+                case 'disconnected':
+                    log(`ICE bağlantısı kesildi (${targetId})`, 'error');
+                    break;
+                case 'failed':
+                    log(`ICE bağlantısı başarısız oldu (${targetId})`, 'error');
+                    // Bağlantıyı yeniden deneyebilirsiniz
+                    break;
+                case 'closed':
+                    log(`ICE bağlantısı kapatıldı (${targetId})`, 'error');
+                    removePeerConnection(targetId);
+                    break;
+            }
+        }
+
+        // Video Aramasını Kapat
+        function closeVideoCall() {
+            // Tüm peer bağlantılarını kapat
+            for (const [targetId, peerConnection] of peerConnections.entries()) {
+                removePeerConnection(targetId);
+            }
+
+            // Map'i temizle
+            peerConnections.clear();
+
+            // Remote video container'ını temizle
+            const container = document.getElementById('remoteVideosContainer');
+            container.innerHTML = '';
+
+            leaveRoomBtn.disabled = true;
+            createRoomBtn.disabled = false;
+            joinRoomBtn.disabled = false;
+
+            log('Tüm bağlantılar kapatıldı');
+        }
+
+        // Odadan Ayrıl
+        function leaveRoom() {
+            if (roomId) {
+                socket.emit('leave', { roomId });
+                log(`${roomId} odasından ayrıldınız`);
+                roomId = null;
+            }
+
+            closeVideoCall();
+
+            // Kullanıcı verilerini temizle
+            peersUserData.clear();
+        }
+
+        // Oda Oluştur
+        createRoomBtn.addEventListener('click', async () => {
+            roomId = roomIdInput.value || Math.random().toString(36).substring(2, 7);
+            roomIdInput.value = roomId;
+
+            try {
+                const response = await fetch(`/create-room?roomId=${roomId}`);
+                const data = await response.json();
+                log(`${data.message}: ${data.roomId}`);
+
+                if (await startLocalStream()) {
+                    socket.emit('join', {
+                        roomId,
+                        userData
+                    });
+                    isInitiator = true;
+                    createRoomBtn.disabled = true;
+                    joinRoomBtn.disabled = true;
+                    leaveRoomBtn.disabled = false;
+                }
+            } catch (error) {
+                log(`Oda oluşturma hatası: ${error.message}`, 'error');
+            }
+        });
+
+        // Odaya Katıl
+        joinRoomBtn.addEventListener('click', async () => {
+            roomId = roomIdInput.value;
+
+            if (!roomId) {
+                log('Lütfen bir oda ID\'si girin', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/find-room?roomId=${roomId}`);
+                const data = await response.json();
+
+                if (data.message === 'Room found') {
+                    log(`${roomId} odasına katılınıyor`);
+
+                    if (await startLocalStream()) {
+                        socket.emit('join', {
+                            roomId,
+                            userData
+                        });
+                        isInitiator = false;
+                        createRoomBtn.disabled = true;
+                        joinRoomBtn.disabled = true;
+                        leaveRoomBtn.disabled = false;
+                    }
+                } else {
+                    log(`Oda bulunamadı: ${roomId}`, 'error');
+                }
+            } catch (error) {
+                log(`Odaya katılma hatası: ${error.message}`, 'error');
+            }
+        });
+
+        // Odadan Ayrıl
+        leaveRoomBtn.addEventListener('click', () => {
+            leaveRoom();
+        });
+
+        // Socket.io Olayları
+        let peersUserData = new Map(); // socketId -> userData
+
+        socket.on('connect', () => {
+            log(`Socket.io sunucusuna bağlandı: ${socket.id}`, 'success');
+        });
+
+        // Mevcut katılımcılar
+        socket.on('existing-participants', (participants) => {
+            log(`${participants.length} mevcut katılımcı bilgisi alındı`);
+
+            // Her bir katılımcı için peer bağlantısı oluştur
+            participants.forEach(participant => {
+                // Kullanıcı verisini sakla
+                if (participant.userData) {
+                    peersUserData.set(participant.socketId, participant.userData);
+                }
+
+                // Bağlantı oluştur
+                const peerConnection = createPeerConnection(participant.socketId);
+                if (peerConnection) {
+                    // Teklif oluştur
+                    peerConnection.createOffer()
+                        .then(offer => peerConnection.setLocalDescription(offer))
+                        .then(() => {
+                            const peerName = participant.userData ? participant.userData.name : participant.socketId;
+                            log(`SDP teklifi gönderiliyor -> ${peerName}`);
+                            socket.emit('sdp', {
+                                targetId: participant.socketId,
+                                sdp: peerConnection.localDescription
+                            });
+                        })
+                        .catch(error => log(`Teklif oluşturma hatası: ${error.message}`, 'error'));
+                }
+            });
+        });
+
+        // Yeni peer
+        socket.on('new-peer', ({ socketId, userData }) => {
+            const peerName = userData ? userData.name : socketId;
+            log(`Yeni kullanıcı katıldı: ${peerName}`);
+
+            // Kullanıcı verisini sakla
+            if (userData) {
+                peersUserData.set(socketId, userData);
+            }
+
+            // Entegrasyon: Görüşme başlama logunu harici API'ye gönder
+            logCallEvent('started', socketId, userData);
+
+            // Bu istemci zaten bağlı ise tekrar bağlantı kurmayı önle
+            if (peerConnections.has(socketId)) {
+                log(`${socketId} ile zaten bir bağlantı var`);
+                return;
+            }
+
+            // Bağlantı kurulmadıysa kur (sadece oda kurucusu ise)
+            if (isInitiator) {
+                const peerConnection = createPeerConnection(socketId);
+                if (peerConnection) {
+                    // Teklif oluştur
+                    peerConnection.createOffer()
+                        .then(offer => peerConnection.setLocalDescription(offer))
+                        .then(() => {
+                            log(`SDP teklifi gönderiliyor -> ${peerName}`);
+                            socket.emit('sdp', {
+                                targetId: socketId,
+                                sdp: peerConnection.localDescription
+                            });
+                        })
+                        .catch(error => log(`Teklif oluşturma hatası: ${error.message}`, 'error'));
+                }
+            }
+        });
+
+        socket.on('sdp', ({ senderId, sdp }) => {
+            const peerUserData = peersUserData.get(senderId);
+            const peerName = peerUserData ? peerUserData.name : senderId;
+            log(`SDP alındı: ${sdp.type} <- ${peerName}`);
+
+            let peerConnection = peerConnections.get(senderId);
+            if (!peerConnection) {
+                peerConnection = createPeerConnection(senderId);
+            }
+
+            if (!peerConnection) {
+                log(`${senderId} için peer bağlantısı oluşturulamadı`, 'error');
+                return;
+            }
+
+            const rtcSdp = new RTCSessionDescription(sdp);
+
+            peerConnection.setRemoteDescription(rtcSdp)
+                .then(() => {
+                    if (sdp.type === 'offer') {
+                        log(`SDP cevabı oluşturuluyor -> ${peerName}`);
+                        return peerConnection.createAnswer();
+                    }
+                })
+                .then(answer => {
+                    if (answer) {
+                        return peerConnection.setLocalDescription(answer);
+                    }
+                })
+                .then(() => {
+                    if (sdp.type === 'offer') {
+                        log(`SDP cevabı gönderiliyor -> ${peerName}`);
+                        socket.emit('sdp', {
+                            targetId: senderId,
+                            sdp: peerConnection.localDescription
+                        });
+                    }
+                })
+                .catch(error => log(`SDP işleme hatası: ${error.message}`, 'error'));
+        });
+
+        socket.on('ice-candidate', ({ senderId, candidate }) => {
+            const peerUserData = peersUserData.get(senderId);
+            const peerName = peerUserData ? peerUserData.name : senderId;
+            log(`ICE adayı alındı <- ${peerName}`);
+
+            const peerConnection = peerConnections.get(senderId);
+            if (peerConnection) {
+                peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
+                    .then(() => {
+                        log(`ICE adayı başarıyla eklendi (${peerName})`);
+                    })
+                    .catch(error => log(`ICE aday ekleme hatası: ${error.message}`, 'error'));
+            }
+        });
+
+        socket.on('disconnect', () => {
+            log('Socket.io sunucusu ile bağlantı kesildi', 'error');
+            closeVideoCall();
+        });
+
+        socket.on('peer-left', ({ socketId }) => {
+            const peerUserData = peersUserData.get(socketId);
+            const peerName = peerUserData ? peerUserData.name : socketId;
+            log(`Katılımcı ayrıldı: ${peerName}`, 'error');
+
+            // Entegrasyon: Görüşme bitme logunu harici API'ye gönder
+            logCallEvent('ended', socketId, peerUserData);
+
+            // Peer bağlantısını kaldır
+            removePeerConnection(socketId);
+
+            // Kullanıcı verisini sil
+            peersUserData.delete(socketId);
+        });
+
+        // Kullanıcı bilgisini döndüren fonksiyon
+        function getUserDataFromPeerId(peerId) {
+            return peersUserData.get(peerId);
+        }
+
+        // ------ CHAT İŞLEVSELLİĞİ ------
+
+        // Mesaj gönderme fonksiyonu
+        function sendChatMessage() {
+            if (!roomId) {
+                log('Mesaj göndermek için bir odaya katılmalısınız', 'error');
+                return;
+            }
+
+            const messageText = chatInput.value.trim();
+            if (messageText === '') return;
+
+            // Mesajı socket.io ile gönder
+            socket.emit('chat-message', {
+                roomId,
+                message: messageText,
+                userData
+            });
+
+            // Entegrasyon: Mesajı harici API'ye gönder
+            logChatMessage(messageText);
+
+            // Input alanını temizle
+            chatInput.value = '';
+
+            // Inputa odaklan
+            chatInput.focus();
+        }
+
+        // Mesaj alma olayını dinle
+        socket.on('chat-message', (messageData) => {
+            displayChatMessage(messageData);
+        });
+
+        // Mesaj geçmişini alma
+        socket.on('chat-history', (messages) => {
+            // Mevcut mesajları temizle
+            chatMessages.innerHTML = '';
+
+            // Geçmiş mesajları görüntüle
+            messages.forEach(msg => {
+                displayChatMessage(msg);
+            });
+
+            log(`${messages.length} mesajlık sohbet geçmişi alındı`, 'info');
+        });
+
+        // Mesajı ekranda gösterme fonksiyonu
+        function displayChatMessage(messageData) {
+            // Mesaj elemanını oluştur
+            const messageEl = document.createElement('div');
+            messageEl.className = 'chat-message';
+
+            // Mesajı gönderen ben miyim?
+            const isOwnMessage = messageData.sender.id === userData.id;
+            messageEl.classList.add(isOwnMessage ? 'own' : 'other');
+
+            // Zaman formatı
+            const date = new Date(messageData.timestamp);
+            const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Mesaj içeriği
+            const senderName = messageData.sender.name || 'Misafir';
+            messageEl.innerHTML = `
+                <div class="message-sender">${isOwnMessage ? 'Ben' : senderName}</div>
+                <div class="message-content">${messageData.text}</div>
+                <div class="message-time">${timeStr}</div>
+            `;
+
+            // Mesajı sohbet alanına ekle
+            chatMessages.appendChild(messageEl);
+
+            // Sohbet alanını aşağı kaydır
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Gönder butonuna tıklama olayı
+        sendMessageBtn.addEventListener('click', sendChatMessage);
+
+        // Enter tuşu ile mesaj gönderme
+        chatInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        });
+
+        // ------ HARICI SİSTEM ENTEGRASYONU ------
+
+        // Mesaj log'unu harici sisteme gönder
+        async function logChatMessage(messageText) {
+            try {
+                // Harici API'ye istek at (mock data için yorum satırı olarak tutuyoruz)
+                /*
+                const response = await fetch('/api/external-logs/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        roomId,
+                        senderId: userData.id, 
+                        message: messageText,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const result = await response.json();
+                console.log('Mesaj log sonucu:', result);
+                */
+
+                // Mock log
+                console.log('📝 API Log (Chat):', {
+                    roomId,
+                    senderId: userData.id,
+                    senderName: userData.name,
+                    message: messageText,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (error) {
+                console.error('Mesaj log hatası:', error);
+            }
+        }
+
+        // Görüşme log'unu harici sisteme gönder
+        async function logCallEvent(status, targetId, targetUserData) {
+            try {
+                const callData = {
+                    roomId,
+                    callerId: userData.id,
+                    callerName: userData.name,
+                    receiverId: targetId,
+                    receiverName: targetUserData ? targetUserData.name : 'Unknown',
+                    status,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Harici API'ye istek at (mock data için yorum satırı olarak tutuyoruz)
+                /*
+                const response = await fetch('/api/external-logs/call', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(callData)
+                });
+                
+                const result = await response.json();
+                console.log('Görüşme log sonucu:', result);
+                */
+
+                // Mock log
+                console.log(`📞 API Log (Call ${status}):`, callData);
+            } catch (error) {
+                console.error('Görüşme log hatası:', error);
+            }
+        }
+
+        // ------ KULLANICI GİRİŞ MODALI ------
+
+        // DOM elementleri
+        const userLoginModal = document.getElementById('userLoginModal');
+        const userForm = document.getElementById('userForm');
+        const userNameInput = document.getElementById('userName');
+        const colorOptions = document.querySelectorAll('.color-option');
+
+        // Seçili renk
+        let selectedColor = '#4CAF50';
+
+        // Renk seçimi olayları
+        colorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // Önceki seçimi kaldır
+                document.querySelector('.color-option.selected').classList.remove('selected');
+                // Yeni seçimi işaretle
+                option.classList.add('selected');
+                // Rengi sakla
+                selectedColor = option.getAttribute('data-color');
+            });
+        });
+
+        // Form gönderme
+        userForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const userName = userNameInput.value.trim();
+            if (!userName) {
+                alert('Lütfen adınızı girin');
+                return;
+            }
+
+            // Kullanıcı verilerini güncelle
+            userData.name = userName;
+            userData.color = selectedColor;
+            userData.initials = userName.substring(0, 2).toUpperCase();
+
+            // Modalı gizle
+            userLoginModal.classList.add('hidden');
+
+            // Ana uygulamayı göster
+            log(`Hoş geldiniz, ${userName}!`, 'success');
+        });
+
+        // Sayfa yüklenmeden önce uygulama container'ını gizle
+        document.addEventListener('DOMContentLoaded', () => {
+            // Form gönderildikten sonra ana uygulama gösterilecek
+        });
+
+        // ------ MEDYA KONTROLLERİ ------
+
+        // Mikrofon açma/kapama
+        function toggleMicrophone() {
+            if (localStream) {
+                const audioTracks = localStream.getAudioTracks();
+                if (audioTracks.length === 0) return;
+
+                const enabled = !audioTracks[0].enabled;
+                audioTracks[0].enabled = enabled;
+                isAudioEnabled = enabled;
+
+                toggleMicBtn.innerHTML = enabled ?
+                    '<i class="fas fa-microphone"></i>' :
+                    '<i class="fas fa-microphone-slash"></i>';
+
+                log(enabled ? 'Mikrofon açıldı' : 'Mikrofon kapatıldı', 'info');
+            }
+        }
+
+        // Kamera açma/kapama
+        function toggleCamera() {
+            if (localStream) {
+                const videoTracks = localStream.getVideoTracks();
+                if (videoTracks.length === 0) return;
+
+                const enabled = !videoTracks[0].enabled;
+                videoTracks[0].enabled = enabled;
+                isVideoEnabled = enabled;
+
+                toggleCamBtn.innerHTML = enabled ?
+                    '<i class="fas fa-video"></i>' :
+                    '<i class="fas fa-video-slash"></i>';
+
+                log(enabled ? 'Kamera açıldı' : 'Kamera kapatıldı', 'info');
+            }
+        }
+
+        // Ekran paylaşımı başlat/durdur
+        async function toggleScreenSharing() {
+            if (isScreenSharing) {
+                // Ekran paylaşımını durdur
+                screenStream.getTracks().forEach(track => track.stop());
+                screenStream = null;
+                isScreenSharing = false;
+                shareScreenBtn.innerHTML = '<i class="fas fa-desktop"></i> Ekranı Paylaş';
+
+                // Tekrar kamera görüntüsüne dön
+                localVideo.srcObject = localStream;
+
+                // WebRTC bağlantısını güncelle
+                updateMediaSenders(localStream);
+                log('Ekran paylaşımı durduruldu', 'info');
+            } else {
+                try {
+                    // Ekran paylaşımı başlat
+                    screenStream = await navigator.mediaDevices.getDisplayMedia({
+                        video: {
+                            cursor: "always"
+                        }
+                    });
+
+                    isScreenSharing = true;
+                    shareScreenBtn.innerHTML = '<i class="fas fa-desktop"></i> Paylaşımı Durdur';
+
+                    // Ekran görüntüsünü göster
+                    localVideo.srcObject = screenStream;
+
+                    // WebRTC bağlantısını güncelle
+                    updateMediaSenders(screenStream);
+
+                    // Ekran paylaşımı sonlandığında otomatik olarak kapat
+                    screenStream.getVideoTracks()[0].addEventListener('ended', () => {
+                        toggleScreenSharing();
+                    });
+
+                    log('Ekran paylaşımı başlatıldı', 'success');
+                } catch (error) {
+                    log(`Ekran paylaşımı başlatılamadı: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // WebRTC üzerindeki medya alıcılarını güncelle
+        function updateMediaSenders(stream) {
+            if (peerConnections.size === 0) return;
+
+            // Her bir peer bağlantısı için medya akışlarını güncelle
+            for (const [targetId, peerConnection] of peerConnections.entries()) {
+                // Mevcut gönderilenleri bul
+                const senders = peerConnection.getSenders();
+
+                // Video track'i güncelle
+                const videoTrack = stream.getVideoTracks()[0];
+                const videoSender = senders.find(sender => sender.track && sender.track.kind === 'video');
+
+                if (videoSender && videoTrack) {
+                    videoSender.replaceTrack(videoTrack)
+                        .then(() => log(`Video track güncellendi (${targetId})`))
+                        .catch(error => log(`Video track güncelleme hatası (${targetId}): ${error.message}`, 'error'));
+                }
+            }
+        }
+
+        // Tam ekran modu
+        function toggleFullscreen(videoElement) {
+            if (!document.fullscreenElement) {
+                if (videoElement.requestFullscreen) {
+                    videoElement.requestFullscreen();
+                } else if (videoElement.webkitRequestFullscreen) { /* Safari */
+                    videoElement.webkitRequestFullscreen();
+                } else if (videoElement.msRequestFullscreen) { /* IE11 */
+                    videoElement.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+            }
+        }
+
+        // Medya kontrol butonlarına olay dinleyicileri ekle
+        toggleMicBtn.addEventListener('click', toggleMicrophone);
+        toggleCamBtn.addEventListener('click', toggleCamera);
+        shareScreenBtn.addEventListener('click', toggleScreenSharing);
+        fullscreenBtn.addEventListener('click', () => toggleFullscreen(localVideo));
+
+        window.addEventListener('beforeunload', () => {
+            leaveRoom();
+        });
+    </script>
+</body>
+
+</html>
